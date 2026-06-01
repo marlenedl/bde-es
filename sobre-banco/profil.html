@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Profile</title>    <link rel="stylesheet" href="styles.css"><link rel="shortcut icon" href="https://pbs.twimg.com/profile_images/2014585489228005377/QXfyRW9s.jpg" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+
+<header>
+    <div>       <img src="https://play-lh.googleusercontent.com/Picc1m6Otd7A9qcn62oYoQoD4hN8wgwCq3-gpUMxC2RR6lhJ_ClHs67nlNAIbqxld1xs=w416-h235-rw" alt="Ecobank Logo" height="120">    <small style="display:block;">« "Growing a better world together" »</small>
+    </div>
+    <div>
+        <input type="text" placeholder="Rechercher sur le site" style="padding:6px 8px; border-radius:5px; border: none;">
+    </div>
+</header>
+
+<nav><a href="#">Everyday Banking</a><a href="#">Savings</a><a href="#">Loans</a><a href="#">Insurance</a><a href="#">Wealth Management</a></nav>
+
+<div class="container">
+    <aside class="sidebar">
+        <h3 id="sidebar-name">Chargement...</h3>
+        <p id="sidebar-address">Adresse : </p>
+        <p>Last connexion : <time id="now"></time> <script> function updateTime() { const now = new Date(); document.getElementById("now").textContent = now.toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "medium" }); } updateTime(); setInterval(updateTime, 1000); </script></p>
+        <button onclick="logout()">Logout</button>
+        
+        <hr><p><a href="dashboard.html">My Accounts</a></p><p><a href="rib.html">My Bank Account Details</a></p><p><a href="mes-cartes.html">My Cards</a></p><p><a href="profil.html">My Profile</a></p><hr><h4>Transactions</h4><a href="virement.html">Make a Transfer</a><a href="ajouter-beneficiaire.html">Add a Beneficiary</a><h4 style="margin-top: 15px;">Accounts</h4><a href="dashboard.html">Summary</a><a href="historique.html">History</a><a href="#">Download</a><p style="margin-top: 15px;"><a href="#">Subscribe online</a></p></aside><main class="main">
+  
+
+    <main class="main">
+        <h2>Personal Information</h2>
+        <div class="form-card">
+            <p><strong>Full Name :</strong> <span id="profil-nom">Chargement...</span></p>
+            <p><strong>Address:</strong> <span id="profil-adresse">Chargement...</span></p>
+            <p><strong>Client Code  :</strong> <span id="profil-code">Chargement...</span></p>
+            <p><strong>Manager :</strong> <span id="profil-conseiller">Chargement...</span></p>
+        </div>
+
+        <h3 style="margin-top: 25px;">Change my password</h3>
+        <div class="form-card">
+            <form id="pin-form">
+                <label for="new-pin">New PIN Code (6 digits) :</label>
+                <input type="text" id="new-pin" maxlength="6" pattern="\d{6}" placeholder="******" required>
+                <p id="pin-message" class="error" style="display: none;"></p>
+                <button type="submit" class="btn-primary" id="pin-submit-btn">Modify PIN</button>
+            </form>
+        </div>
+    </main>
+    
+</div>
+
+
+<footer>
+   Legal notice – Security – Accessibility – Site map
+</footer>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Mise à jour initiale de la barre latérale
+    updateUI();
+    
+    // 2. Récupération des données fraîches de Firebase de manière ASYNCHRONE
+    const user = await getAndSetCurrentUser();
+    const pinForm = document.getElementById('pin-form');
+    const pinSubmitBtn = document.getElementById('pin-submit-btn');
+    const messageEl = document.getElementById('pin-message');
+
+    if (user) {
+        // Affichage des informations personnelles
+        document.getElementById('profil-nom').textContent = user.nom;
+        document.getElementById('profil-adresse').textContent = user.adresse;
+        document.getElementById('profil-code').textContent = user.clientCode;
+        document.getElementById('profil-conseiller').textContent = user.conseiller;
+
+        // GESTION DU CHANGEMENT DE PIN (ASYNCHRONE)
+        pinForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            messageEl.style.display = 'none';
+            pinSubmitBtn.disabled = true;
+
+            const newPin = document.getElementById('new-pin').value;
+
+            if (newPin.length === 6 && /^\d+$/.test(newPin)) {
+                
+                try {
+                    // Mettre à jour la donnée locale
+                    user.pin = newPin; 
+                    
+                    // Sauvegarde ASYNCHRONE sur Firebase
+                    await updateCurrentUser(user); 
+                    
+                    // Succès
+                    messageEl.className = 'success';
+                    messageEl.textContent = 'Code PIN mis à jour avec succès et sauvegardé.';
+                    document.getElementById('new-pin').value = '';
+
+                } catch (error) {
+                    console.error("Erreur de sauvegarde du PIN:", error);
+                    messageEl.className = 'error';
+                    messageEl.textContent = "Erreur de connexion : Impossible de sauvegarder le nouveau PIN.";
+                }
+
+            } else {
+                // Validation front-end échouée
+                messageEl.className = 'error';
+                messageEl.textContent = 'Veuillez entrer un PIN de 6 chiffres valides.';
+            }
+            
+            messageEl.style.display = 'block';
+            pinSubmitBtn.disabled = false; // Réactiver le bouton
+        });
+    }
+});
+</script>
+</body>
+</html>
